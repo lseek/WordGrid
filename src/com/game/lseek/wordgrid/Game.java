@@ -59,6 +59,13 @@ public class Game {
             }
             return this;
         }
+
+        public void print() {
+            Log.d(LOGTAG, String.format("===Round:%d===", roundNum));
+            for (String key : goals.keySet()) {
+                Log.d(LOGTAG, String.format("  Word:%s, Clue:%s", key, goals.get(key)));
+            }
+        }
     }
 
 

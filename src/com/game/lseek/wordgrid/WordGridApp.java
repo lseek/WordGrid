@@ -7,5 +7,10 @@ import android.os.Bundle;
 public class WordGridApp extends Application
 {
     public int gridSize = 10;
-    //public Model.Game currGame;
+    Game currGame;
+
+    public void startGame() {
+        String appDir = getExternalFilesDir(null).getPath();
+        currGame = new Game(String.format("%s/testGame.txt", appDir));
+    }
 }

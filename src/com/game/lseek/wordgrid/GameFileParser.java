@@ -5,32 +5,32 @@ import android.util.Log;
 /**
  * State transitions for game parser (input is a tokenized line).
  *
- * State        Input Tag Type              Dest. State
+ * State        Input Line Type    Dest. State         Action
+ * -----------------------------------------------------------------------
+ * INITIAL          BLANK_LINE     INITIAL            Consume line
+ * INITIAL          TITLE          GET_TITLE          Don't consume line
+ * INITIAL          ROUND_TITLE    GET_ROUND_TITLE    Don't consume line
+ * INITIAL          ROUND_ITEM     GET_ROUND_ITEM     Don't consume line
  *
- * Initial      BLANK_LINE                  Initial
- * Initial      TITLE                       GetTitle
- * Initial      ROUND_TITLE                 GetRoundTitle
- * Initial      ROUND_ITEM                  GetRoundItems
+ * GET_TITLE        BLANK_LINE     SKIP_BLANKS        Consume line
+ * GET_TITLE        TITLE          SKIP_BLANKS        Save Title, consume line
+ * GET_TITLE        ROUND_TITLE    GET_ROUND_TITLE    Don't consume line
+ * GET_TITLE        ROUND_ITEM     GET_ROUND_ITEM     Don't consume line
  *
- * GetTitle     BLANK_LINE                  SkipBlanks
- * GetTitle     TITLE                       SkipBlanks
- * GetTitle     ROUND_TITLE                 GetRoundTitle
- * GetTitle     ROUND_ITEM                  GetRoundItem
+ * SKIP_BLANKS      BLANK_LINE     SKIP_BLANKS        Consume line
+ * SKIP_BLANKS      TITLE          SKIP_BLANKS        Consume line
+ * SKIP_BLANKS      ROUND_TITLE    GET_ROUND_TITLE    Don't consume line
+ * SKIP_BLANKS      ROUND_ITEM     GET_ROUND_ITEM     Don't consume line
  *
- * SkipBlanks   BLANK_LINE                  SkipBlanks
- * SkipBlanks   ROUND_TITLE                 GetRoundTitle
- * SkipBlanks   ROUND_ITEM                  GetRoundItem
- * SkipBlanks   TITLE                       Error
+ * GET_ROUND_TITLE  BLANK_LINE     SKIP_BLANKS       Consume line
+ * GET_ROUND_TITLE  TITLE          SKIP_BLANKS       Consume line
+ * GET_ROUND_TITLE  ROUND_TITLE    GET_ROUND_ITEM    Create new round, consume line
+ * GET_ROUND_TITLE  ROUND_ITEM     GET_ROUND_ITEM    Don't consume line
  *
- * GetRoundTitle  BLANK_LINE                (Delete this round)
- * GetRoundTitle  ROUND_ITEM                GetRoundItem
- * GetRoundTitle  TITLE                     Error
- * GetRoundTitle  ROUND_TITLE               (Delete this round)
- *
- * GetRoundItem BLANK_LINE                  SkipBlanks
- * GetRoundItem ROUND_TITLE                 GetRoundTitle
- * GetRoundItem ROUND_ITEM                  GetRoundItem
- * GetRoundItem TITLE                       Error
+ * GET_ROUND_ITEM   BLANK_LINE     SKIP_BLANKS       Consume line
+ * GET_ROUND_ITEM   TITLE          SKIP_BLANKS       Consume line
+ * GET_ROUND_ITEM   ROUND_TITLE    GET_ROUND_TITLE   Don't consume line
+ * GET_ROUND_ITEM   ROUND_ITEM     GET_ROUND_ITEM    Add goal to current round, consume line
  */
 public class GameFileParser {
     private enum ParserState {
@@ -42,11 +42,12 @@ public class GameFileParser {
         ERROR;
     }
     private String LOGTAG = "wordgrid.Game.parser";
+    private ParserState currState;
 
-    private ParserState currState = ParserState.INITIAL;
 
-
-    public GameFileParser() {;}
+    public GameFileParser() {
+        currState = ParserState.INITIAL;
+    }
 
 
     /*
@@ -54,20 +55,23 @@ public class GameFileParser {
      * line is read from the file until the current line is consumed.
      */
     public TaggedLine process(TaggedLine line, Game g) {
-        if (currState == ParserState.INITIAL) {
+        Log.d(LOGTAG, String.format("process: currState:%s" currState));
+        switch (currState) {
+        case INITIAL:
             return initial(line, g);
-        } else if (currState == ParserState.GET_TITLE) {
+        case GET_TITLE:
             return getTitle(line, g);
-        } else if (currState == ParserState.SKIP_BLANKS) {
+        case  SKIP_BLANKS:
             return SkipBlanks(line, g);
-        } else if (currState == ParserState.GET_ROUND_TITLE) {
+        case GET_ROUND_TITLE:
             return GetRoundTitle(line, g);
-        } else if (currState == ParserState.GET_ROUND_ITEM) {
+        case GET_ROUND_ITEM:
             return GetRoundItem(line, g);
+        default:
+            // should never come here
+            Log.e(LOGTAG, "Parser in unknown state!");
         }
 
-        // TODO: Raise some invalid state exception
-        Log.e(LOGTAG, "Parser encountered error");
         return null;
     }
 
@@ -75,7 +79,6 @@ public class GameFileParser {
     private TaggedLine initial(TaggedLine line, Game g) {
         switch (line.lineType) {
             case BLANK_LINE:
-                // consume the empty line, don't change state.
                 return null;
             case TITLE:
                 currState = ParserState.GET_TITLE;
@@ -115,7 +118,7 @@ public class GameFileParser {
             case BLANK_LINE:
                 return null;
             case TITLE:
-                Log.e(LOGTAG, "TITLE cannot be declared here, skipping");
+                Log.e(LOGTAG, "Saw TITLE in SKIP_BLANKS state!");
                 return null;
             case ROUND_TITLE:
                 currState = ParserState.GET_ROUND_TITLE;
@@ -130,15 +133,19 @@ public class GameFileParser {
     private TaggedLine GetRoundTitle(TaggedLine line, Game g) {
         switch (line.lineType) {
             case BLANK_LINE:
+                currState = ParserState.SKIP_BLANKS;
                 return null;
             case TITLE:
-                Log.e(LOGTAG, "TITLE cannot be declared here, skipping");
+                Log.e(LOGTAG, "Saw TITLE in GET_ROUND_TITLE state!");
+                currState = ParserState.SKIP_BLANKS;
                 return null;
             case ROUND_TITLE:
                 g.getNewRound(line.data);
-                currState = ParserState.GET_ROUND_TITLE;
+                currState = ParserState.GET_ROUND_ITEM;
                 return null;
             case ROUND_ITEM:
+                // Should never happen
+                Log.w(LOGTAG, "Saw ROUND_ITEM in GET_ROUND_TITLE state!");
                 currState = ParserState.GET_ROUND_ITEM;
                 return line;
         }
@@ -148,9 +155,11 @@ public class GameFileParser {
     private TaggedLine GetRoundItem(TaggedLine line, Game g) {
         switch (line.lineType) {
             case BLANK_LINE:
+                currState = ParserState.SKIP_BLANKS;
                 return null;
             case TITLE:
-                Log.e(LOGTAG, "TITLE cannot be declared here, skipping");
+                Log.e(LOGTAG, "Saw TITLE in GET_ROUND_ITEM state!");
+                currState = ParserState.SKIP_BLANKS;
                 return null;
             case ROUND_TITLE:
                 currState = ParserState.GET_ROUND_TITLE;
