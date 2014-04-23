@@ -5,7 +5,6 @@ import android.os.Bundle;
 
 import android.view.Gravity;
 import android.widget.*;
-import android.widget.*;
 import android.graphics.Color;
 import java.util.ArrayList;
 import java.util.Random;
