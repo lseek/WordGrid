@@ -20,6 +20,8 @@ class Constants {
 
     public static final Pattern ALPHA_RE = Pattern.compile("[a-zA-Z]+");
 
+    public static final byte MAX_ATTEMPTS = 10;
+
     public static enum TagType {
         TITLE, ROUND_TITLE, ROUND_ITEM, BLANK_LINE
     };
@@ -44,7 +46,6 @@ class Constants {
             return ((enumVal & levelMask) != 0);
         }
     }
-    public static final int N_LEVELS = 3;
 
 
     public static final Map<String, TagType> tagMap;
