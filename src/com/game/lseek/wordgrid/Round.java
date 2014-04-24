@@ -12,7 +12,7 @@ class Round {
     public String roundTitle;
 
     class GoalInfo {
-        byte row, col;  // position of word in the grid.
+        Box b;
         Goal goal;
     }
 
@@ -25,9 +25,9 @@ class Round {
 
     public Round(String rTitle) {
         roundNum = roundCount++;
-        goals = new HashMap<Constants.ItemLevel, Map<String, Goal>>();
+        goals = new HashMap<Constants.ItemLevel, Map<String, GoalInfo>>();
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
-            goals.put(l, new HashMap<String, Goal>());
+            goals.put(l, new HashMap<String, GoalInfo>());
         }
         setTitle(rTitle);
         grids = new HashMap<Constants.ItemLevel, ArrayList<String>>();
@@ -49,7 +49,7 @@ class Round {
     /*
      * Return only those items that match specified level
      */
-    public Map<String, Goal> filter(Constants.ItemLevel level) {
+    public Map<String, GoalInfo> filter(Constants.ItemLevel level) {
         return goals.get(level);
     }
 
@@ -71,7 +71,7 @@ class Round {
 
 
     /* Generate a grid for the specified level and place words in the grid */
-    public genGrid(Constants.ItemLevel l) {
+    public void genGrid(Constants.ItemLevel l) {
         // We don't allow words to intersect
 
     }
@@ -79,7 +79,7 @@ class Round {
 
     public void print() {
         LOG.d(LOGTAG, "===%s===", roundTitle);
-        Map<String, Goal> m;
+        Map<String, GoalInfo> m;
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
             LOG.d(LOGTAG, "  Items for level:%s", l);
             m = goals.get(l);

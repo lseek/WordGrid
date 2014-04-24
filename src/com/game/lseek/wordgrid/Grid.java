@@ -1,12 +1,12 @@
 package com.game.lseek.wordgrid;
 
-import java.util.ArrayList;
 import java.util.Random;
 
 
 class Grid {
     private char[][] entries;
     private Random rndGen;
+    private byte size;
 
     class Box {
         byte left, top, right, bottom;
@@ -21,32 +21,46 @@ class Grid {
                 entries[row][col] = (char)('A' + rndGen.nextInt(25));
             }
         }
+        size = sz;
     }
 
 
     public void placeWord(String word) {
-        byte left, top
-        for (byte i = 0; i < Constants.MAX_ATTEMPTS; i++) {
+        byte left, top, right, bottom, wordLen;
+        Constants.Direction d;
+        wordLen = word.length();
 
+        /*
+         * 1. Get a random direction
+         * 2. Get a random point (left, top). Direction + word length defines
+         *    the bounding box
+         * 3. If bounding box is within grid & doesn't intersect with other
+         *    bounding boxes then accept placement else retry.
+         */
+        for (byte i = 0; i < Constants.MAX_ATTEMPTS; i++) {
+            d = Constants.Direction.fromInt(rndGen.nextInt(4));
+            left = rndGen.nextInt(size);
+            top = rndGen.nextInt(size);
+            // right is always > left except for VERTICAL direction.
+            right = (d != Constants.Direction.VERTICAL) ? left + wordLen : left;
+            // For bounding box calculation, bottom is always > top except for
+            // HORIZONTAL direction
+            bottom = (d != Constants.Direction.HORIZONTAL) ? top + wordLen : top;
+            if (!fits(right, bottom)) {
+                continue;
+            } else {
+            }
         }
+    }
+
+
+    // do the coordinates fit within the grid?
+    private void fits(int col, int row) {
+        return ((col < size) && (row < size));
     }
 
 
     // Fill empty cells of grid with random uppercase alphabets
     public void populate() {
-    }
-
-
-    // Do b1 and b2 intersect (or one is contained in another)?
-    private intersect(Box b1, Box b2) {
-        boolean leftRightIntersect;
-        boolean topBottomIntersect;
-
-        leftRightIntersect = ((b1.left <= b2.left) && (b2.left <= b1.right)) ||
-                             ((b2.left <= b1.left) && (b1.left <= b2.right));
-        topBottomIntersect = ((b1.top <= b2.top) && (b2.top <= b1.bottom)) ||
-                             ((b2.top <= b1.top) && (b1.top <= b2.bottom));
-
-        return leftRightIntersect && topBottomIntersect;
     }
 }
