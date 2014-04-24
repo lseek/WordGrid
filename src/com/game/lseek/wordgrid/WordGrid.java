@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.os.Bundle;
 
 import android.view.Gravity;
+import android.view.View;
 import android.widget.*;
 import android.graphics.Color;
 import java.util.ArrayList;
@@ -12,6 +13,7 @@ import android.content.res.Resources;
 import android.view.LayoutInflater;
 
 
+/*
 public class WordGrid extends Activity
 {
     int             gridSize = 10;
@@ -81,5 +83,21 @@ public class WordGrid extends Activity
 
         createWordGrid();
         createClueArea();
+    }
+}
+*/
+
+public class WordGrid extends Activity
+{
+    @Override
+    public void onCreate(Bundle savedInstanceState)
+    {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.main);
+    }
+
+    public void startGame(View btn) {
+        WordGridApp app = (WordGridApp)getApplicationContext();
+        app.startGame();
     }
 }

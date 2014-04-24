@@ -1,9 +1,13 @@
 package com.game.lseek.wordgrid;
 
-import android.util.Log;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * State transitions for game parser (input is a tokenized line).
+ *
+ * In case of parser error, consume and ignore current line.
  *
  * State        Input Line Type    Dest. State         Action
  * -----------------------------------------------------------------------
@@ -25,7 +29,7 @@ import android.util.Log;
  * GET_ROUND_TITLE  BLANK_LINE     SKIP_BLANKS       Consume line
  * GET_ROUND_TITLE  TITLE          SKIP_BLANKS       Consume line
  * GET_ROUND_TITLE  ROUND_TITLE    GET_ROUND_ITEM    Create new round, consume line
- * GET_ROUND_TITLE  ROUND_ITEM     GET_ROUND_ITEM    Don't consume line
+ * GET_ROUND_TITLE  ROUND_ITEM     GET_ROUND_ITEM    (Cannot happen)
  *
  * GET_ROUND_ITEM   BLANK_LINE     SKIP_BLANKS       Consume line
  * GET_ROUND_ITEM   TITLE          SKIP_BLANKS       Consume line
@@ -33,16 +37,134 @@ import android.util.Log;
  * GET_ROUND_ITEM   ROUND_ITEM     GET_ROUND_ITEM    Add goal to current round, consume line
  */
 public class GameFileParser {
+    private String LOGTAG = "wordgrid.parser";
+
     private enum ParserState {
         INITIAL,
         GET_TITLE,
         SKIP_BLANKS,
         GET_ROUND_TITLE,
-        GET_ROUND_ITEM,
-        ERROR;
+        GET_ROUND_ITEM
     }
-    private String LOGTAG = "wordgrid.Game.parser";
+
     private ParserState currState;
+
+    private interface Action {
+        // 'run' should return null if it consumes the input line
+        public TaggedLine run(TaggedLine line, Game g);
+    }
+
+    // Don't consume a line
+    private Action nop = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            return line;
+        }
+    };
+
+    // Just consume a line
+    private Action chomp = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            return null;
+        }
+    };
+
+    // Extract game title
+    private Action getTitle = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            g.gameTitle = line.data;
+            LOG.d(LOGTAG, String.format("Got Game Title:%s", line.data));
+            return null;
+        }
+    };
+
+    // Extract round title and create new round with it
+    private Action getRoundTitle = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            g.getNewRound(line.data);
+            LOG.d(LOGTAG, String.format("Got Round Title:%s", line.data));
+            return null;
+        }
+    };
+
+    // Extract round item and add it to current round
+    private Action getRoundItem = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            g.getCurrentRound().addGoal(line);
+            LOG.d(LOGTAG, String.format("Parsing Round Item:%s", line.data));
+            return null;
+        }
+    };
+
+    /* An action that warns of a misplaced game title (and consume it) */
+    private Action warnMisplacedTitle = new Action() {
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            LOG.e(LOGTAG, "Saw TITLE in invalid state! Ignoring");
+            return null;
+        }
+    };
+
+    private class StateInfo {
+        ParserState nextState;
+        Action action;
+
+        public StateInfo(ParserState destState, Action handler) {
+            nextState = destState;
+            action = handler;
+        }
+    };
+
+    // The state machine:
+    //   stateMachine[currState][TagType] gives info about how to handle this
+    //   input and transition to next state
+    private Map<ParserState, Map<Constants.TagType, StateInfo>> stateMachine;
+    {
+        stateMachine = new HashMap<ParserState, Map<Constants.TagType, StateInfo>>();
+
+        // Transitions for ParserState.INITIAL state
+        Map<Constants.TagType, StateInfo> m = new HashMap<Constants.TagType, StateInfo>();
+        m.put(Constants.TagType.BLANK_LINE, new StateInfo(ParserState.INITIAL, chomp));
+        m.put(Constants.TagType.TITLE, new StateInfo(ParserState.GET_TITLE, nop));
+        m.put(Constants.TagType.ROUND_TITLE, new StateInfo(ParserState.GET_ROUND_TITLE, nop));
+        m.put(Constants.TagType.ROUND_ITEM, new StateInfo(ParserState.GET_ROUND_ITEM, nop));
+        stateMachine.put(ParserState.INITIAL, m);
+
+        // Transitions for ParserState.GET_TITLE state
+        m = new HashMap<Constants.TagType, StateInfo>();
+        m.put(Constants.TagType.BLANK_LINE, new StateInfo(ParserState.SKIP_BLANKS, chomp));
+        m.put(Constants.TagType.TITLE, new StateInfo(ParserState.SKIP_BLANKS, getTitle));
+        m.put(Constants.TagType.ROUND_TITLE, new StateInfo(ParserState.GET_ROUND_TITLE, nop));
+        m.put(Constants.TagType.ROUND_ITEM, new StateInfo(ParserState.GET_ROUND_ITEM, nop));
+        stateMachine.put(ParserState.GET_TITLE, m);
+
+        // Transitions for ParserState.SKIP_BLANKS state
+        m = new HashMap<Constants.TagType, StateInfo>();
+        m.put(Constants.TagType.BLANK_LINE, new StateInfo(ParserState.SKIP_BLANKS, chomp));
+        m.put(Constants.TagType.TITLE, new StateInfo(ParserState.SKIP_BLANKS, warnMisplacedTitle));
+        m.put(Constants.TagType.ROUND_TITLE, new StateInfo(ParserState.GET_ROUND_TITLE, nop));
+        m.put(Constants.TagType.ROUND_ITEM, new StateInfo(ParserState.GET_ROUND_ITEM, nop));
+        stateMachine.put(ParserState.SKIP_BLANKS, m);
+
+        // Transitions for ParserState.GET_ROUND_TITLE state
+        m = new HashMap<Constants.TagType, StateInfo>();
+        m.put(Constants.TagType.BLANK_LINE, new StateInfo(ParserState.SKIP_BLANKS, chomp));
+        m.put(Constants.TagType.TITLE, new StateInfo(ParserState.SKIP_BLANKS, warnMisplacedTitle));
+        m.put(Constants.TagType.ROUND_TITLE, new StateInfo(ParserState.GET_ROUND_ITEM, getRoundTitle));
+        stateMachine.put(ParserState.GET_ROUND_TITLE, m);
+
+        // Transitions for ParserState.GET_ROUND_ITEM state
+        m = new HashMap<Constants.TagType, StateInfo>();
+        m.put(Constants.TagType.BLANK_LINE, new StateInfo(ParserState.SKIP_BLANKS, chomp));
+        m.put(Constants.TagType.TITLE, new StateInfo(ParserState.SKIP_BLANKS, warnMisplacedTitle));
+        m.put(Constants.TagType.ROUND_TITLE, new StateInfo(ParserState.GET_ROUND_TITLE, nop));
+        m.put(Constants.TagType.ROUND_ITEM, new StateInfo(ParserState.GET_ROUND_ITEM, getRoundItem));
+        stateMachine.put(ParserState.GET_ROUND_ITEM, m);
+    }
 
 
     public GameFileParser() {
@@ -50,126 +172,13 @@ public class GameFileParser {
     }
 
 
-    /*
-     * Return the "TaggedLine" if it is not consumed, in which case no new
-     * line is read from the file until the current line is consumed.
-     */
     public TaggedLine process(TaggedLine line, Game g) {
-        Log.d(LOGTAG, String.format("process: currState:%s" currState));
-        switch (currState) {
-        case INITIAL:
-            return initial(line, g);
-        case GET_TITLE:
-            return getTitle(line, g);
-        case  SKIP_BLANKS:
-            return SkipBlanks(line, g);
-        case GET_ROUND_TITLE:
-            return GetRoundTitle(line, g);
-        case GET_ROUND_ITEM:
-            return GetRoundItem(line, g);
-        default:
-            // should never come here
-            Log.e(LOGTAG, "Parser in unknown state!");
-        }
-
-        return null;
-    }
-
-
-    private TaggedLine initial(TaggedLine line, Game g) {
-        switch (line.lineType) {
-            case BLANK_LINE:
-                return null;
-            case TITLE:
-                currState = ParserState.GET_TITLE;
-                return line;
-            case ROUND_TITLE:
-                currState = ParserState.GET_ROUND_TITLE;
-                return line;
-            case ROUND_ITEM:
-                currState = ParserState.GET_ROUND_TITLE;
-                return line;
-        }
-        return line; // should never come here but Java wants it.
-    }
-
-
-    private TaggedLine getTitle(TaggedLine line, Game g) {
-        switch (line.lineType) {
-            case BLANK_LINE:
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case TITLE:
-                g.title = line.data;
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case ROUND_TITLE:
-                currState = ParserState.GET_ROUND_TITLE;
-                return line;
-            case ROUND_ITEM:
-                currState = ParserState.GET_ROUND_ITEM;
-                return line;
-        }
-        return line; // should never come here but Java wants it.
-    }
-
-    private TaggedLine SkipBlanks(TaggedLine line, Game g) {
-        switch (line.lineType) {
-            case BLANK_LINE:
-                return null;
-            case TITLE:
-                Log.e(LOGTAG, "Saw TITLE in SKIP_BLANKS state!");
-                return null;
-            case ROUND_TITLE:
-                currState = ParserState.GET_ROUND_TITLE;
-                return line;
-            case ROUND_ITEM:
-                currState = ParserState.GET_ROUND_ITEM;
-                return line;
-        }
-        return line;
-    }
-
-    private TaggedLine GetRoundTitle(TaggedLine line, Game g) {
-        switch (line.lineType) {
-            case BLANK_LINE:
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case TITLE:
-                Log.e(LOGTAG, "Saw TITLE in GET_ROUND_TITLE state!");
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case ROUND_TITLE:
-                g.getNewRound(line.data);
-                currState = ParserState.GET_ROUND_ITEM;
-                return null;
-            case ROUND_ITEM:
-                // Should never happen
-                Log.w(LOGTAG, "Saw ROUND_ITEM in GET_ROUND_TITLE state!");
-                currState = ParserState.GET_ROUND_ITEM;
-                return line;
-        }
-        return line;
-    }
-
-    private TaggedLine GetRoundItem(TaggedLine line, Game g) {
-        switch (line.lineType) {
-            case BLANK_LINE:
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case TITLE:
-                Log.e(LOGTAG, "Saw TITLE in GET_ROUND_ITEM state!");
-                currState = ParserState.SKIP_BLANKS;
-                return null;
-            case ROUND_TITLE:
-                currState = ParserState.GET_ROUND_TITLE;
-                return line;
-            case ROUND_ITEM:
-                currState = ParserState.GET_ROUND_ITEM;
-                g.getCurrentRound().addGoal(line);
-                return null;
-        }
-        return line;
+        LOG.d(LOGTAG, String.format("process: currState:%s, lineType:%s, data:%s",
+                                    currState, line.lineType, line.data));
+        StateInfo s = stateMachine.get(currState).get(line.lineType);
+        LOG.d(LOGTAG, "State transition from:%s to:%s", currState, s.nextState);
+        currState = s.nextState;
+        return s.action.run(line, g);
     }
 }
 

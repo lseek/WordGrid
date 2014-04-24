@@ -12,5 +12,6 @@ public class WordGridApp extends Application
     public void startGame() {
         String appDir = getExternalFilesDir(null).getPath();
         currGame = new Game(String.format("%s/testGame.txt", appDir));
+        currGame.print();
     }
 }
