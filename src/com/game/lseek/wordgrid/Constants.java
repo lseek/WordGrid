@@ -10,9 +10,9 @@ import java.util.regex.Pattern;
 
 
 class Constants {
-    public static final Pattern ITEM_RE = Pattern.compile("((^(@(EASY|NORMAL|HARD))+):)*\\s*(.*)$");
+    public static final Pattern ITEM_RE = Pattern.compile("^(@(EASY|NORMAL|HARD):)?\\s*(.*)$");
     public static final int LEVEL_GRP = 2; // RE group that gives the list of levels
-    public static final int ITEM_DATA = 5; // RE group that gives the item data in case of a match
+    public static final int ITEM_DATA = 3; // RE group that gives the item data in case of a match
 
     public static final Pattern SECTION_RE = Pattern.compile("^@(TITLE|ROUND):\\s*(.*)$");
     public static final int SECTION_GRP = 1; // RE group that gives the section type
@@ -39,7 +39,12 @@ class Constants {
         byte intVal() {
             return enumVal;
         }
+
+        boolean in(byte levelMask) {
+            return ((enumVal & levelMask) != 0);
+        }
     }
+    public static final int N_LEVELS = 3;
 
 
     public static final Map<String, TagType> tagMap;

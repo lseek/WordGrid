@@ -1,47 +1,49 @@
 package com.game.lseek.wordgrid;
 
+import android.util.Log;
 import java.util.regex.Matcher;
 
 
 class TaggedLine {
+    private String LOGTAG = "wordgrid.Game.TaggedLine";
+
     Constants.TagType lineType;
     byte level;    // bitmap of ORed levels. Meaningful only for ROUND_ITEM types
     String data;
 
     // NOTE: line should have been trim()med.
     public TaggedLine(String line) {
+        Log.d(LOGTAG, "Parsing line:" + line);
         if (line.length() == 0) {
+            Log.d(LOGTAG, "  Empty line");
             lineType = Constants.TagType.BLANK_LINE;
             data = null;
         } else {
             Matcher m = Constants.SECTION_RE.matcher(line);
             if (m.matches()) {
+                Log.d(LOGTAG, "  TITLE or ROUND title");
                 // TITLE or ROUND spec
                 lineType = Constants.tagMap.get(m.group(Constants.SECTION_GRP));
                 data = m.group(Constants.SECTION_DATA);
             } else {
+                Log.d(LOGTAG, "  ROUND item");
                 // Round item
                 lineType = Constants.TagType.ROUND_ITEM;
                 m = Constants.ITEM_RE.matcher(line);
                 if (m.matches()) {
-                    int inLevel;
-                    for (String lvl : m.group(Constants.LEVEL_GRP).split("@")) {
-                        if (lvl.length() == 0) {
-                            /*
-                             * Since a list of levels starts with "@"
-                             * therefore the first member of the split list
-                             * will be empty and should be skipped over.
-                             * Alternatively, we could first strip the
-                             * leading "@".
-                             */
-                            continue;
-                        }
-                        level |= Constants.levelMap.get(lvl).intVal();
+                    String levelStr = m.group(Constants.LEVEL_GRP);
+                    if (levelStr != null) {
+                        Log.d(LOGTAG, "  Level explicitly specified:" + levelStr);
+                        level |= Constants.levelMap.get(levelStr).intVal();
+                        data = m.group(Constants.ITEM_DATA);
+                        Log.d(LOGTAG, "  Data:" + data);
+                    } else {
+                        Log.d(LOGTAG, "  Implicit EASY level entry, Data:" + line);
+                        level = Constants.ItemLevel.EASY.intVal();
+                        data = line;
                     }
-                    data = m.group(Constants.ITEM_DATA);
                 } else {
-                    level = Constants.ItemLevel.EASY.intVal();
-                    data = line;
+                    Log.e(LOGTAG, "Syntax error:" + line);
                 }
             }
         }
