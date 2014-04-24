@@ -18,6 +18,7 @@ public class Game {
 
     public String gameTitle;
     public ArrayList<Round> rounds;
+    private gridSize;
     Round currRound;
 
 
@@ -60,6 +61,7 @@ public class Game {
             }
             tokenizedLine = parser.process(tokenizedLine, this);
         }
+        gridSize = 10; // TODO: fetch it from preferences
         LOG.d(LOGTAG, "Finished constructing game object");
     }
 
