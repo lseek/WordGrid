@@ -48,6 +48,22 @@ class Constants {
     }
 
 
+    public static enum Direction {
+        HORIZONTAL, // left to right, one horizontal line
+        VERTICAL,   // top to bottom, one vertical line
+        DIAG_UP,    // left to right, bottom to top
+        DIAG_DOWN;  // left to right, top to bottom
+
+        static private Direction valueArr[] = {
+            HORIZONTAL, VERTICAL, DIAG_UP, DIAG_DOWN
+        };
+
+        public static Direction fromInt(int i) {
+            return valueArr[i];
+        }
+    }
+
+
     public static final Map<String, TagType> tagMap;
     static {
         tagMap = new HashMap<String, TagType>();

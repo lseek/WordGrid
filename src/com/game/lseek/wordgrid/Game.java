@@ -18,7 +18,7 @@ public class Game {
 
     public String gameTitle;
     public ArrayList<Round> rounds;
-    private gridSize;
+    private int gridSize;
     Round currRound;
 
 
