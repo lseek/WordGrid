@@ -11,13 +11,8 @@ class Round {
 
     public String roundTitle;
 
-    class GoalInfo {
-        Box b;
-        Goal goal;
-    }
-
     // maintain a word<->goal mapping for each level.
-    private Map<Constants.ItemLevel, Map<String, GoalInfo>> goals;
+    private Map<Constants.ItemLevel, Map<String, Goal>> goalList;
     int roundNum;
 
     // A level<->grid mapping for each level
@@ -25,9 +20,9 @@ class Round {
 
     public Round(String rTitle) {
         roundNum = roundCount++;
-        goals = new HashMap<Constants.ItemLevel, Map<String, GoalInfo>>();
+        goalList = new HashMap<Constants.ItemLevel, Map<String, Goal>>();
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
-            goals.put(l, new HashMap<String, GoalInfo>());
+            goalList.put(l, new HashMap<String, Goal>());
         }
         setTitle(rTitle);
         grids = new HashMap<Constants.ItemLevel, ArrayList<String>>();
@@ -35,12 +30,11 @@ class Round {
 
 
     public void addGoal(TaggedLine line) {
-        GoalInfo g = new GoalInfo();
-        g.goal = new Goal(line);
+        Goal g = new Goal(line);
 
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
-            if (l.in(g.goal.level)) {
-                goals.get(l).put(g.goal.word, g);
+            if (l.in(g.level)) {
+                goalList.get(l).put(g.word, g);
             }
         }
     }
@@ -49,13 +43,13 @@ class Round {
     /*
      * Return only those items that match specified level
      */
-    public Map<String, GoalInfo> filter(Constants.ItemLevel level) {
-        return goals.get(level);
+    public Map<String, Goal> filter(Constants.ItemLevel level) {
+        return goalList.get(level);
     }
 
 
     public boolean isEmpty() {
-        return (goals.size() == 0);
+        return (goalList.size() == 0);
     }
 
 
@@ -79,12 +73,12 @@ class Round {
 
     public void print() {
         LOG.d(LOGTAG, "===%s===", roundTitle);
-        Map<String, GoalInfo> m;
+        Map<String, Goal> m;
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
             LOG.d(LOGTAG, "  Items for level:%s", l);
-            m = goals.get(l);
+            m = goalList.get(l);
             for (String key : m.keySet()) {
-                LOG.d(LOGTAG, "    %s", m.get(key).goal);
+                LOG.d(LOGTAG, "    %s", m.get(key));
             }
         }
     }

@@ -49,6 +49,7 @@ class Constants {
 
 
     public static enum Direction {
+        UNDEFINED,
         HORIZONTAL, // left to right, one horizontal line
         VERTICAL,   // top to bottom, one vertical line
         DIAG_UP,    // left to right, bottom to top
