@@ -47,6 +47,8 @@ public class GameFileParser {
         GET_ROUND_ITEM
     }
 
+    private Round currRound;
+
     private ParserState currState;
 
     private interface Action {
@@ -84,7 +86,7 @@ public class GameFileParser {
     private Action getRoundTitle = new Action() {
         @Override
         public TaggedLine run(TaggedLine line, Game g) {
-            g.getNewRound(line.data);
+            currRound = g.getNewRound(currRound, line.data);
             LOG.d(LOGTAG, String.format("Got Round Title:%s", line.data));
             return null;
         }
@@ -94,7 +96,10 @@ public class GameFileParser {
     private Action getRoundItem = new Action() {
         @Override
         public TaggedLine run(TaggedLine line, Game g) {
-            g.getCurrentRound().addGoal(line);
+            if (currRound == null) {
+                currRound = g.getNewRound(null, null);
+            }
+            currRound.addGoal(line);
             LOG.d(LOGTAG, String.format("Parsing Round Item:%s", line.data));
             return null;
         }
@@ -169,6 +174,7 @@ public class GameFileParser {
 
     public GameFileParser() {
         currState = ParserState.INITIAL;
+        currRound = null;
     }
 
 
@@ -179,6 +185,10 @@ public class GameFileParser {
         LOG.d(LOGTAG, "State transition from:%s to:%s", currState, s.nextState);
         currState = s.nextState;
         return s.action.run(line, g);
+    }
+
+    public Round unprocessedRound() {
+        return currRound;
     }
 }
 

@@ -15,8 +15,6 @@ class Round {
     private Map<Constants.ItemLevel, Map<String, Goal>> goalList;
     int roundNum;
 
-    // A level<->grid mapping for each level
-    private Map<Constants.ItemLevel, ArrayList<String>> grids;
 
     public Round(String rTitle) {
         roundNum = roundCount++;
@@ -25,7 +23,6 @@ class Round {
             goalList.put(l, new HashMap<String, Goal>());
         }
         setTitle(rTitle);
-        grids = new HashMap<Constants.ItemLevel, ArrayList<String>>();
     }
 
 
@@ -61,13 +58,6 @@ class Round {
             roundTitle = String.format("Round %d", roundNum);
         }
         return this;
-    }
-
-
-    /* Generate a grid for the specified level and place words in the grid */
-    public void genGrid(Constants.ItemLevel l) {
-        // We don't allow words to intersect
-
     }
 
 

@@ -18,8 +18,6 @@ public class Game {
 
     public String gameTitle;
     public ArrayList<Round> rounds;
-    private int gridSize;
-    Round currRound;
 
 
     public Game(String gameFilePath) {
@@ -35,7 +33,6 @@ public class Game {
         TaggedLine tokenizedLine = null;
         String line = null;
 
-        currRound = new Round(null);
         rounds = new ArrayList<Round>();
 
         while (true) {
@@ -48,11 +45,13 @@ public class Game {
                 }
                 if (line == null) {
                     LOG.d(LOGTAG, String.format("Finished parsing:%s", gameFilePath));
-                    if (!currRound.isEmpty()) {
-                        LOG.d(LOGTAG, String.format("Adding:%s", currRound.roundTitle));
-                        rounds.add(currRound);
+
+                    Round tailData = parser.unprocessedRound();
+                    if (!tailData.isEmpty()) {
+                        LOG.d(LOGTAG, String.format("Adding:%s", tailData.roundTitle));
+                        rounds.add(tailData);
                     } else {
-                        LOG.d(LOGTAG, "currRound is empty");
+                        LOG.d(LOGTAG, "tailData is empty");
                     }
                     break;
                 }
@@ -61,17 +60,11 @@ public class Game {
             }
             tokenizedLine = parser.process(tokenizedLine, this);
         }
-        gridSize = 10; // TODO: fetch it from preferences
         LOG.d(LOGTAG, "Finished constructing game object");
     }
 
 
-    public Round getCurrentRound() {
-        return currRound;
-    }
-
-
-    public Round getNewRound(String rTitle) {
+    public Round getNewRound(Round currRound, String rTitle) {
         if (currRound != null) {
             if (!currRound.isEmpty()) {
                 LOG.d(LOGTAG, "---- Adding round:" + currRound.roundTitle);
