@@ -16,10 +16,23 @@ class Grid {
     class Cell {
         public boolean revealed;
         public char value;
+        public boolean isSolution;
 
         public Cell() {
             value = EMPTY_CELL;
             revealed = false;
+        }
+
+        public Cell setVal(char c, boolean isSolution) {
+            value = c;
+            this.isSolution = isSolution;
+            return this;
+        }
+
+        public Cell setVal(char c) {
+            value = c;
+            this.isSolution = false;
+            return this;
         }
     }
 
@@ -37,10 +50,10 @@ class Grid {
     }
 
 
-    // find a place for a word
-    public void placeWord(Goal goal, Map<String, Goal> goalList) {
+    // find a place for a word w.r.t. a list of words
+    public boolean placeWord(Goal goal, Map<String, Goal> goalList) {
         if (goal.isPlaced()) {
-            return; // already placed
+            return true; // already placed
         }
 
         /*
@@ -75,20 +88,57 @@ class Grid {
                 }
             }
             if (isClear) {
-                goal.setPos(left, top, right, bottom, d);
-                return;
+                goal.setPlacement(left, top, right, bottom, d);
+                return true;
             }
         }
         LOG.e(LOGTAG, "Unable to place:%s after:%s attempts", goal.word, Constants.MAX_ATTEMPTS);
+        return false;
+    }
+
+
+    // Place all words in goalList. Return true if all words could be placed.
+    public boolean placeAllWords(Map<String, Goal> goalList) {
+        for (Goal g : goalList.values()) {
+            if (!placeWord(g, goalList)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    // Generate the grid
+    public Grid generate(Map<String, Goal> goals) {
+        boolean allPlaced = false;
+        for (int i = 0; i < Constants.MAX_ATTEMPTS; i++) {
+            for (Goal g : goals.values()) {
+                g.clearPlacement();
+            }
+            if (placeAllWords(goals)) {
+                allPlaced = true;
+                LOG.i(LOGTAG, "Generated grid. Attempt:%d", i+1);
+                break;
+            }
+            LOG.i(LOGTAG, "Unable to generate grid. Attempt:%d", i+1);
+        }
+        if (!allPlaced) {
+            LOG.i(LOGTAG, "Unable to generate grid after:%d attempts. Giving up.",
+                  Constants.MAX_ATTEMPTS);
+            return null;
+        }
+        populate(goals);
+        fillOtherCells();
+        return this;
     }
 
 
     // fill unoccupied cells with random uppercase alphabets
-    public void generate() {
+    public void fillOtherCells() {
         for (int row = 0; row < size ; row++) {
             for (int col = 0; col < size; col++) {
                 if (entries[row][col].value == EMPTY_CELL) {
-                    entries[row][col].value = (char)('A' + rndGen.nextInt(25));
+                    entries[row][col].setVal((char)('A' + rndGen.nextInt(25)));
                 }
             }
         }
@@ -102,22 +152,22 @@ class Grid {
                 switch (g.direction) {
                 case HORIZONTAL:
                     for (i = 0; i < g.word.length(); i++) {
-                        entries[g.top][g.left + i].value = g.word.charAt(i);
+                        entries[g.top][g.left + i].setVal(g.word.charAt(i), true);
                     }
                     break;
                 case VERTICAL:
                     for (i = 0; i < g.word.length(); i++) {
-                        entries[g.top + i][g.left].value = g.word.charAt(i);
+                        entries[g.top + i][g.left].setVal(g.word.charAt(i), true);
                     }
                     break;
                 case DIAG_UP:
                     for (i = 0; i < g.word.length(); i++) {
-                        entries[g.bottom -i][g.left + i].value = g.word.charAt(i);
+                        entries[g.bottom -i][g.left + i].setVal(g.word.charAt(i), true);
                     }
                     break;
                 case DIAG_DOWN:
                     for (i = 0; i < g.word.length(); i++) {
-                        entries[g.top + i][g.left + i].value = g.word.charAt(i);
+                        entries[g.top + i][g.left + i].setVal(g.word.charAt(i), true);
                     }
                     break;
                 case UNDEFINED:
@@ -129,13 +179,26 @@ class Grid {
     }
 
 
+    public void printSolution() {
+        Cell c;
+        for (int row = 0; row < size ; row++) {
+            StringBuilder line = new StringBuilder(size);
+            for (int col = 0; col < size; col++) {
+                c = entries[row][col];
+                line.append(c.isSolution ? c.value : EMPTY_CELL);
+            }
+            LOG.d(LOGTAG, line.toString());
+        }
+    }
+
+
     public void print() {
         StringBuilder line = new StringBuilder(size);
         for (int row = 0; row < size ; row++) {
             for (int col = 0; col < size; col++) {
                 line.append(entries[row][col].value);
             }
-            LOG.d(LOGTAG, "%s", line);
+            LOG.d(LOGTAG, line.toString());
         }
     }
 }
