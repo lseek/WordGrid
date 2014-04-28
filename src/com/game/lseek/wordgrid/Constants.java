@@ -50,6 +50,7 @@ class Constants {
 
     public static enum Direction {
         UNDEFINED,
+        OVERLAP,
         HORIZONTAL, // left to right, one horizontal line
         VERTICAL,   // top to bottom, one vertical line
         DIAG_UP,    // left to right, bottom to top
@@ -61,6 +62,10 @@ class Constants {
 
         public static Direction fromInt(int i) {
             return valueArr[i];
+        }
+
+        public boolean isUndefined() {
+            return (this == UNDEFINED);
         }
     }
 
