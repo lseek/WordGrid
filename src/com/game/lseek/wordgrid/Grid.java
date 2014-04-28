@@ -1,7 +1,6 @@
 package com.game.lseek.wordgrid;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 import java.util.Random;
 
 
@@ -9,11 +8,11 @@ class Grid {
     private static final String LOGTAG = "wordgrid.Grid";
     private static final char EMPTY_CELL = '.';
 
-    private Cell[][] entries;
     private Random rndGen;
-    private byte size;
+    public byte size;
+    public  Cell[][] entries;
 
-    class Cell {
+    public class Cell {
         public boolean revealed;
         public char value;
         public boolean isSolution;
@@ -51,7 +50,7 @@ class Grid {
 
 
     // find a place for a word w.r.t. a list of words
-    public boolean placeWord(Goal goal, Map<String, Goal> goalList) {
+    public boolean placeWord(Goal goal, ArrayList<Goal> goalList) {
         if (goal.isPlaced()) {
             return true; // already placed
         }
@@ -81,7 +80,7 @@ class Grid {
             }
 
             boolean isClear = true;
-            for (Goal g : goalList.values()) {
+            for (Goal g : goalList) {
                 if (g.isPlaced() && g.intersects(left, top, right, bottom)) {
                     isClear = false;
                     break;
@@ -98,8 +97,8 @@ class Grid {
 
 
     // Place all words in goalList. Return true if all words could be placed.
-    public boolean placeAllWords(Map<String, Goal> goalList) {
-        for (Goal g : goalList.values()) {
+    public boolean placeAllWords(ArrayList<Goal> goalList) {
+        for (Goal g : goalList) {
             if (!placeWord(g, goalList)) {
                 return false;
             }
@@ -109,10 +108,10 @@ class Grid {
 
 
     // Generate the grid
-    public Grid generate(Map<String, Goal> goals) {
+    public Grid generate(ArrayList<Goal> goals) {
         boolean allPlaced = false;
         for (int i = 0; i < Constants.MAX_ATTEMPTS; i++) {
-            for (Goal g : goals.values()) {
+            for (Goal g : goals) {
                 g.clearPlacement();
             }
             if (placeAllWords(goals)) {
@@ -145,9 +144,9 @@ class Grid {
     }
 
     // Fill in the words
-    public void populate(Map<String, Goal> goalList) {
+    public void populate(ArrayList<Goal> goalList) {
         int i;
-        for (Goal g : goalList.values()) {
+        for (Goal g : goalList) {
             if (g.isPlaced()) {
                 switch (g.direction) {
                 case HORIZONTAL:
@@ -179,6 +178,16 @@ class Grid {
     }
 
 
+    public void setRevealed(int row, int col) {
+        entries[row][col].revealed = true;
+    }
+
+
+    public char getChar(int row, int col) {
+        return entries[row][col].value;
+    }
+
+
     public void printSolution() {
         Cell c;
         for (int row = 0; row < size ; row++) {
@@ -193,8 +202,8 @@ class Grid {
 
 
     public void print() {
-        StringBuilder line = new StringBuilder(size);
         for (int row = 0; row < size ; row++) {
+            StringBuilder line = new StringBuilder(size);
             for (int col = 0; col < size; col++) {
                 line.append(entries[row][col].value);
             }

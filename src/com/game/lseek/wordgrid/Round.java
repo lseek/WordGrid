@@ -12,15 +12,15 @@ class Round {
     public String roundTitle;
 
     // maintain a word<->goal mapping for each level.
-    private Map<Constants.ItemLevel, Map<String, Goal>> goalList;
+    private Map<Constants.ItemLevel, ArrayList<Goal>> goalList;
     int roundNum;
 
 
     public Round(String rTitle) {
         roundNum = roundCount++;
-        goalList = new HashMap<Constants.ItemLevel, Map<String, Goal>>();
+        goalList = new HashMap<Constants.ItemLevel, ArrayList<Goal>>();
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
-            goalList.put(l, new HashMap<String, Goal>());
+            goalList.put(l, new ArrayList<Goal>());
         }
         setTitle(rTitle);
     }
@@ -31,7 +31,7 @@ class Round {
 
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
             if (l.in(g.level)) {
-                goalList.get(l).put(g.word, g);
+                goalList.get(l).add(g);
             }
         }
     }
@@ -40,11 +40,13 @@ class Round {
     /*
      * Return only those items that match specified level
      */
-    public Map<String, Goal> filter(Constants.ItemLevel level) {
+    public ArrayList<Goal> filter(Constants.ItemLevel level) {
         return goalList.get(level);
     }
 
 
+    // TODO: It may be possible that goalList is not empty for a particular
+    // level but empty for another.
     public boolean isEmpty() {
         return (goalList.size() == 0);
     }
@@ -63,12 +65,12 @@ class Round {
 
     public void print() {
         LOG.d(LOGTAG, "===%s===", roundTitle);
-        Map<String, Goal> m;
+        ArrayList<Goal> m;
         for (Constants.ItemLevel l : Constants.ItemLevel.values()) {
             LOG.d(LOGTAG, "  Items for level:%s", l);
             m = goalList.get(l);
-            for (String key : m.keySet()) {
-                LOG.d(LOGTAG, "    %s", m.get(key));
+            for (Goal g : m) {
+                LOG.d(LOGTAG, "    %s", g);
             }
         }
     }
