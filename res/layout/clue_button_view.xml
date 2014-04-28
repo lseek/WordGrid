@@ -3,4 +3,5 @@
     android:layout_width="fill_parent"
     android:layout_height="wrap_content"
     android:onClick="clueClicked"
+    android:drawableLeft="@drawable/btn_check_off"
     android:gravity="left"/>

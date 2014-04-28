@@ -1,8 +1,9 @@
 package com.game.lseek.wordgrid;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
-import android.os.Bundle;
+import android.content.DialogInterface;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -45,17 +46,24 @@ class GuiCell {
 
 
     public GuiCell(Context context, LayoutInflater inflater, ViewGroup parent,
-                   Grid.Cell src, byte row, byte col, int id) {
+                   byte row, byte col, int id) {
         cellGui = (TextView)inflater.inflate(R.layout.grid_text_view, parent, false);
-        modelCell = src;
         this.row = row;
         this.col = col;
         this.context = context;
 
         cellGui.setClickable(true);
         cellGui.setId(id);
-        cellGui.setText(String.valueOf(src.value));
         clearStyles();
+    }
+
+
+    public GuiCell setSource(Grid.Cell src) {
+        modelCell = src;
+        cellGui.setText(String.valueOf(src.value));
+        cellGui.setClickable(true);
+        clearStyles();
+        return this;
     }
 
 
@@ -233,15 +241,17 @@ public class GuiGrid {
     private static final String LOGTAG = "wordgrid.GuiGrid";
 
     private Context context;
+    private TableLayout gridArea;
+    private GuiCell[][] txtCells;
+    private LinearLayout clueArea;
+    private Grid grid;
+    private LayoutInflater inflater;
+    private WordGridApp app;
+    private GuiCellList currChain;
+    private byte nLeft;
+    private int currRound;
+    private ArrayList<Goal> currGoals;
 
-    TableLayout gridArea;
-    GuiCell[][] txtCells;
-    LinearLayout clueArea;
-    Grid grid;
-    LayoutInflater inflater;
-    WordGridApp app;
-
-    GuiCellList currChain;
 
 
     private int mkId(byte row, byte col) {
@@ -262,6 +272,7 @@ public class GuiGrid {
         Button b;
         Goal g;
 
+        clueArea.removeAllViews();
         for (int i = 0; i < goals.size(); i++) {
             g = goals.get(i);
             b = (Button)inflater.inflate(R.layout.clue_button_view, clueArea, false);
@@ -273,33 +284,12 @@ public class GuiGrid {
 
 
     private void createWordGrid(Grid g) {
-        TableRow tableRow;
-        GuiCell uiCell;
-        TableRow.LayoutParams cellParams;
-        TableLayout.LayoutParams rowParams;
         byte row, col;
-        String data;
-
-        txtCells = new GuiCell[g.size][g.size];
-        cellParams = new TableRow.LayoutParams(
-                TableRow.LayoutParams.FILL_PARENT,
-                TableRow.LayoutParams.WRAP_CONTENT);
-        cellParams.weight = 1;
-        rowParams = new TableLayout.LayoutParams(
-                TableLayout.LayoutParams.FILL_PARENT,
-                TableLayout.LayoutParams.WRAP_CONTENT);
-        rowParams.weight = 1;
 
         for (row = 0; row < g.size; row++) {
-            tableRow = new TableRow(context);
-            tableRow.setGravity(Gravity.CENTER);
             for (col = 0; col < g.size; col++) {
-                uiCell = new GuiCell(context, inflater, tableRow,
-                                     g.entries[row][col], row, col, mkId(row, col));
-                tableRow.addView(uiCell.cellGui, cellParams);
-                txtCells[row][col] = uiCell;
+                txtCells[row][col].setSource(g.entries[row][col]);
             }
-            gridArea.addView(tableRow, rowParams);
         }
     }
 
@@ -310,17 +300,94 @@ public class GuiGrid {
     }
 
 
+    public void roundCompleteDialog() {
+        if (currRound < app.currGame.rounds.size()-1) {
+            AlertDialog.Builder builder = new AlertDialog.Builder(context);
+            builder.setTitle("Congratulations")
+                .setMessage("Congratulations!")
+                .setPositiveButton(R.string.next_round,
+                        new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int id) {
+                                currRound++;
+                                initRound();
+                            }
+                        })
+            .setNegativeButton(R.string.main_menu,
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+                            ((Activity)context).finish();
+                        }
+                    });
+            builder.show();
+        } else {
+            ((Activity)context).finish();
+        }
+    }
+
+
     public void checkSelection(View btn) {
         Button b = (Button)btn;
         String selection = currChain.toString();
-        Goal goal = app.currGoals.get(b.getId());
+        Goal goal = currGoals.get(b.getId());
         if (selection.equals(goal.word)) {
             LOG.d(LOGTAG, "MATCH:%s:%s", goal.word, goal.clue);
             currChain.reveal();
+            b.setClickable(false);
+            b.setTextAppearance(context, R.style.revealedText);
+            b.setCompoundDrawablesWithIntrinsicBounds(R.drawable.btn_check_on, 0, 0, 0);
+            nLeft--;
+            if (nLeft == 0) {
+                roundCompleteDialog();
+            }
         } else {
             LOG.d(LOGTAG, "%s: DOESN'T MATCH:%s:%s", selection, goal.word, goal.clue);
             currChain.clear();
         }
+    }
+
+
+    public void mkEmptyGrid() {
+        TableRow tableRow;
+        GuiCell uiCell;
+        TableRow.LayoutParams cellParams;
+        TableLayout.LayoutParams rowParams;
+        byte row, col;
+
+        txtCells = new GuiCell[app.gridSize][app.gridSize];
+        cellParams = new TableRow.LayoutParams(
+                TableRow.LayoutParams.FILL_PARENT,
+                TableRow.LayoutParams.WRAP_CONTENT);
+        cellParams.weight = 1;
+        rowParams = new TableLayout.LayoutParams(
+                TableLayout.LayoutParams.FILL_PARENT,
+                TableLayout.LayoutParams.WRAP_CONTENT);
+        rowParams.weight = 1;
+
+        for (row = 0; row < app.gridSize; row++) {
+            tableRow = new TableRow(context);
+            tableRow.setGravity(Gravity.CENTER);
+            for (col = 0; col < app.gridSize; col++) {
+                uiCell = new GuiCell(context, inflater, tableRow, row, col, mkId(row, col));
+                tableRow.addView(uiCell.cellGui, cellParams);
+                txtCells[row][col] = uiCell;
+            }
+            gridArea.addView(tableRow, rowParams);
+        }
+    }
+
+
+    public void initRound() {
+        currGoals = app.currGame.rounds.get(currRound).filter(app.level);
+        Grid currGrid = new Grid(app.gridSize);
+        currGrid.generate(currGoals);
+        currGrid.printSolution();
+        currGrid.print();
+        createWordGrid(currGrid);
+        LOG.d(LOGTAG, "Created word grid");
+        createClueArea(currGoals);
+        LOG.d(LOGTAG, "Created clue area");
+        nLeft = (byte)currGoals.size();
+        currChain.clear();
     }
 
 
@@ -334,11 +401,9 @@ public class GuiGrid {
         this.app = app;
         this.context = context;
 
+        currRound = 0;
         currChain = new GuiCellList();
-
-        createWordGrid(app.currGrid);
-        LOG.d(LOGTAG, "Created word grid");
-        createClueArea(app.currGoals);
-        LOG.d(LOGTAG, "Created clue area");
+        mkEmptyGrid();
+        initRound();
     }
 }
