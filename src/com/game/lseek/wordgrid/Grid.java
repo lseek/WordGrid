@@ -6,34 +6,10 @@ import java.util.Random;
 
 class Grid {
     private static final String LOGTAG = "wordgrid.Grid";
-    private static final char EMPTY_CELL = '.';
 
     private Random rndGen;
     public byte size;
     public  Cell[][] entries;
-
-    public class Cell {
-        public boolean revealed;
-        public char value;
-        public boolean isSolution;
-
-        public Cell() {
-            value = EMPTY_CELL;
-            revealed = false;
-        }
-
-        public Cell setVal(char c, boolean isSolution) {
-            value = c;
-            this.isSolution = isSolution;
-            return this;
-        }
-
-        public Cell setVal(char c) {
-            value = c;
-            this.isSolution = false;
-            return this;
-        }
-    }
 
 
     public Grid(byte sz) {
@@ -41,9 +17,9 @@ class Grid {
         rndGen = new Random();
         size = sz;
 
-        for (int row = 0; row < sz ; row++) {
-            for (int col = 0; col < sz; col++) {
-                entries[row][col] = new Cell();
+        for (byte row = 0; row < sz ; row++) {
+            for (byte col = 0; col < sz; col++) {
+                entries[row][col] = new Cell(row, col);
             }
         }
     }
@@ -136,7 +112,7 @@ class Grid {
     public void fillOtherCells() {
         for (int row = 0; row < size ; row++) {
             for (int col = 0; col < size; col++) {
-                if (entries[row][col].value == EMPTY_CELL) {
+                if (entries[row][col].value == Cell.EMPTY_CELL) {
                     entries[row][col].setVal((char)('A' + rndGen.nextInt(25)));
                 }
             }
@@ -178,13 +154,12 @@ class Grid {
     }
 
 
-    public void setRevealed(int row, int col) {
-        entries[row][col].revealed = true;
-    }
-
-
-    public char getChar(int row, int col) {
-        return entries[row][col].value;
+    public void clearGrid() {
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                entries[row][col].reset();
+            }
+        }
     }
 
 
@@ -194,7 +169,7 @@ class Grid {
             StringBuilder line = new StringBuilder(size);
             for (int col = 0; col < size; col++) {
                 c = entries[row][col];
-                line.append(c.isSolution ? c.value : EMPTY_CELL);
+                line.append(c.isSolution ? c.value : Cell.EMPTY_CELL);
             }
             LOG.d(LOGTAG, line.toString());
         }

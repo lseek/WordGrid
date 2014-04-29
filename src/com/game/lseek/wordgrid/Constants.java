@@ -64,7 +64,7 @@ class Constants {
             return valueArr[i];
         }
 
-        public boolean isUndefined() {
+        public boolean notDefined() {
             return (this == UNDEFINED);
         }
     }

@@ -9,7 +9,7 @@ public class WordGridApp extends Application
 {
     private static final String LOGTAG = "wordgrid.Game";
 
-    public byte gridSize = 12;
+    public byte gridSize = 15;
     public Constants.ItemLevel level;
     public Game currGame;
 

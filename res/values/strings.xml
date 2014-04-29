@@ -2,7 +2,8 @@
 <resources>
     <string name="app_name">WordGrid</string>
     <string name="congrats_title">Congratulations!</string>
-    <string name="congrats_msg">Congratulations! You have finished this round</string>
-    <string name="next_round">Next Round</string>
-    <string name="main_menu">Main Menu</string>
+    <string name="round_complete_msg">Congratulations! You have finished this round</string>
+    <string name="game_complete_msg">Congratulations! You have finished this game</string>
+    <string name="next_round">Play Next Round</string>
+    <string name="main_menu">Return to Main Menu</string>
 </resources>
