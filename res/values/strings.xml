@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">WordGrid</string>
-    <string name="congrats_title">Congratulations!</string>
-    <string name="round_complete_msg">Congratulations! You have finished this round</string>
-    <string name="game_complete_msg">Congratulations! You have finished this game</string>
-    <string name="next_round">Play Next Round</string>
-    <string name="main_menu">Return to Main Menu</string>
+    <string name="yesChoice">Yes</string>
+    <string name="noChoice">No</string>
+    <string name="error">Error</string>
 </resources>

@@ -12,7 +12,7 @@
 
     <style name="revealedText">
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">#ff0000</item>
+        <item name="android:textColor">#ff8888</item>
     </style>
 
     <color name="normalCellBg">#000000</color>

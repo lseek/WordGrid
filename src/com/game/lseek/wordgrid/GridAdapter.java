@@ -56,11 +56,11 @@ class GridAdapter extends BaseAdapter {
             cell.setBackgroundResource(R.color.revealedCellBg);
             cell.setClickable(false);
         } else if (src.selected) {
-            cell.setClickable(true);
+            cell.setClickable(!grid.revealed);
             cell.setTextAppearance(context, R.style.selectedText);
             cell.setBackgroundResource(R.color.selectedCellBg);
         } else {
-            cell.setClickable(true);
+            cell.setClickable(!grid.revealed);
             cell.setTextAppearance(context, R.style.normalText);
             cell.setBackgroundResource(R.color.normalCellBg);
         }
@@ -97,7 +97,6 @@ class GridAdapter extends BaseAdapter {
     @Override
     public long getItemId(int position) {
         long itemId = (row(position) << 8) | col(position);
-        LOG.d(LOGTAG, "getItemId(%d):%d", position, itemId);
         return itemId;
     }
 }

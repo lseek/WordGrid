@@ -7,9 +7,10 @@ import java.util.Random;
 class Grid {
     private static final String LOGTAG = "wordgrid.Grid";
 
+    public  Cell[][] entries;
+    public boolean revealed = false;
     private Random rndGen;
     public byte size;
-    public  Cell[][] entries;
 
 
     public Grid(byte sz) {
@@ -22,6 +23,63 @@ class Grid {
                 entries[row][col] = new Cell(row, col);
             }
         }
+    }
+
+
+    public void clearGrid() {
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                entries[row][col].reset();
+            }
+        }
+    }
+
+
+    // fill unoccupied cells with random uppercase alphabets
+    public void fillOtherCells() {
+        for (int row = 0; row < size ; row++) {
+            for (int col = 0; col < size; col++) {
+                if (entries[row][col].value == Cell.EMPTY_CELL) {
+                    entries[row][col].setVal((char)('A' + rndGen.nextInt(25)));
+                }
+            }
+        }
+    }
+
+
+    // Generate the grid
+    public Grid generate(ArrayList<Goal> goals) {
+        boolean allPlaced = false;
+        for (int i = 0; i < Constants.MAX_ATTEMPTS; i++) {
+            for (Goal g : goals) {
+                g.clearPlacement();
+            }
+            if (placeAllWords(goals)) {
+                allPlaced = true;
+                LOG.i(LOGTAG, "Generated grid. Attempt:%d", i+1);
+                break;
+            }
+            LOG.i(LOGTAG, "Unable to generate grid. Attempt:%d", i+1);
+        }
+        if (!allPlaced) {
+            LOG.i(LOGTAG, "Unable to generate grid after:%d attempts. Giving up.",
+                  Constants.MAX_ATTEMPTS);
+            return null;
+        }
+        populate(goals);
+        fillOtherCells();
+        return this;
+    }
+
+
+    // Place all words in goalList. Return true if all words could be placed.
+    public boolean placeAllWords(ArrayList<Goal> goalList) {
+        for (Goal g : goalList) {
+            if (!placeWord(g, goalList)) {
+                return false;
+            }
+        }
+        return true;
     }
 
 
@@ -72,53 +130,6 @@ class Grid {
     }
 
 
-    // Place all words in goalList. Return true if all words could be placed.
-    public boolean placeAllWords(ArrayList<Goal> goalList) {
-        for (Goal g : goalList) {
-            if (!placeWord(g, goalList)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-
-    // Generate the grid
-    public Grid generate(ArrayList<Goal> goals) {
-        boolean allPlaced = false;
-        for (int i = 0; i < Constants.MAX_ATTEMPTS; i++) {
-            for (Goal g : goals) {
-                g.clearPlacement();
-            }
-            if (placeAllWords(goals)) {
-                allPlaced = true;
-                LOG.i(LOGTAG, "Generated grid. Attempt:%d", i+1);
-                break;
-            }
-            LOG.i(LOGTAG, "Unable to generate grid. Attempt:%d", i+1);
-        }
-        if (!allPlaced) {
-            LOG.i(LOGTAG, "Unable to generate grid after:%d attempts. Giving up.",
-                  Constants.MAX_ATTEMPTS);
-            return null;
-        }
-        populate(goals);
-        fillOtherCells();
-        return this;
-    }
-
-
-    // fill unoccupied cells with random uppercase alphabets
-    public void fillOtherCells() {
-        for (int row = 0; row < size ; row++) {
-            for (int col = 0; col < size; col++) {
-                if (entries[row][col].value == Cell.EMPTY_CELL) {
-                    entries[row][col].setVal((char)('A' + rndGen.nextInt(25)));
-                }
-            }
-        }
-    }
-
     // Fill in the words
     public void populate(ArrayList<Goal> goalList) {
         int i;
@@ -154,15 +165,6 @@ class Grid {
     }
 
 
-    public void clearGrid() {
-        for (int row = 0; row < size; row++) {
-            for (int col = 0; col < size; col++) {
-                entries[row][col].reset();
-            }
-        }
-    }
-
-
     public void printSolution() {
         Cell c;
         for (int row = 0; row < size ; row++) {
@@ -184,5 +186,19 @@ class Grid {
             }
             LOG.d(LOGTAG, line.toString());
         }
+    }
+
+
+    public void reveal() {
+        Cell c;
+        for (int row = 0; row < size; row++) {
+            for (int col = 0; col < size; col++) {
+                c = entries[row][col];
+                if (c.isSolution) {
+                    c.revealed = true;
+                }
+            }
+        }
+        revealed = true;
     }
 }
