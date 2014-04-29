@@ -10,7 +10,7 @@ import android.widget.*;
 public class GuiGridActivity extends Activity
 {
     private static final String LOGTAG = "wordgrid.guiGridActivity";
-    private GuiGrid grid;
+    private GridController controller;
 
     @Override
     public void onCreate(Bundle savedInstanceState)
@@ -18,18 +18,20 @@ public class GuiGridActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.grid_activity);
 
-        TableLayout gridArea = (TableLayout)findViewById(R.id.gridArea);
-        LinearLayout clueArea = (LinearLayout)findViewById(R.id.clueArea);
         LayoutInflater inflater = getLayoutInflater();
         WordGridApp app = (WordGridApp)getApplication();
-        grid = new GuiGrid(this, gridArea, clueArea, inflater, app);
+
+        GridView gridArea = (GridView)findViewById(R.id.gridArea);
+        LinearLayout clueArea = (LinearLayout)findViewById(R.id.clueArea);
+
+        controller = new GridController(this, inflater, app, gridArea, clueArea);
     }
 
     public void cellClicked(View txtCell) {
-        grid.select(txtCell);
+        controller.select(txtCell);
     }
 
     public void clueClicked(View clueBtn) {
-        grid.checkSelection(clueBtn);
+        controller.checkSelection(clueBtn);
     }
 }
