@@ -6,7 +6,8 @@
     <supports-screens
         android:largeScreens="true"
         android:normalScreens="true"
-    />
+        />
+    <uses-sdk android:targetSdkVersion="15"/>
     <application
         android:label="@string/app_name"
         android:icon="@drawable/app_icon"

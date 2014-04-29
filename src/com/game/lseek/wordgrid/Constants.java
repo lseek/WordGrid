@@ -20,7 +20,7 @@ class Constants {
 
     public static final Pattern ALPHA_RE = Pattern.compile("[a-zA-Z]+");
 
-    public static final byte MAX_ATTEMPTS = 10;
+    public static final byte MAX_ATTEMPTS = 30;
 
     public static enum TagType {
         TITLE, ROUND_TITLE, ROUND_ITEM, BLANK_LINE

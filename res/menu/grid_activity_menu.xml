@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:id="@+id/reveal"
+        android:onClick="doReveal"
+        android:title="@string/reveal"/>
+    <item android:id="@+id/prevRound"
+        android:onClick="doPrevRound"
+        android:title="@string/goToPrevRound" />
+    <item android:id="@+id/nextRound"
+        android:onClick="doNextRound"
+        android:title="@string/goToNextRound" />
+</menu>
+

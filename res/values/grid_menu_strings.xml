@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reveal">Show All</string>
+    <string name="goToPrevRound">Previous Round</string>
+    <string name="goToNextRound">Next Round</string>
+</resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="congratsTitle">Congratulations!</string>
+    <string name="roundCompleteMsg">Congratulations! You have finished this round</string>
+    <string name="gameCompleteMsg">Congratulations! You have finished this game</string>
+    <string name="continueToNextRound">Play Next Round</string>
+    <string name="toMainMenu">Return to Main Menu</string>
+    <string name="gridBuildFail">Failed to create grid for round %1$d. Try again?</string>
+</resources>
