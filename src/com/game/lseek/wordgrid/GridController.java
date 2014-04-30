@@ -9,8 +9,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.*;
 import java.lang.Integer;
+import java.lang.Math;
 import java.util.ArrayList;
 
+import static com.game.lseek.wordgrid.Constants.*;
+import com.game.lseek.wordgrid.Constants.HeaderType;
 
 public class GridController {
     private static final String LOGTAG = "wordgrid.GuiGrid";
@@ -24,6 +27,7 @@ public class GridController {
     private int currRound;
     private Grid grid;
     private GridView gridArea;
+    private byte gridSize;
     private LayoutInflater inflater;
     private boolean menuReady = false;
     private byte nLeft;
@@ -40,12 +44,18 @@ public class GridController {
         this.gridArea = gridArea;
         this.clueArea = clueArea;
 
-        grid = new Grid(app.gridSize);
+        gridSize = app.currGame.gameInfo.containsKey(HeaderType.SIZE) ?
+                   (byte)Integer.parseInt(app.currGame.gameInfo.get(HeaderType.SIZE)) :
+                   app.currGame.calculatedSz;
+        gridSize = (byte)Math.min(gridSize, MAX_GRID_SIZE);
+        gridSize = (byte)Math.max(gridSize, MIN_GRID_SIZE);
+        LOG.d(LOGTAG, "Using grid size:%d", gridSize);
+        grid = new Grid(gridSize);
         currRound = 0;
         currChain = new CellLine();
         adapter = new GridAdapter(inflater, context);
         gridArea.setAdapter(adapter);
-        gridArea.setNumColumns(app.gridSize);
+        gridArea.setNumColumns(gridSize);
         initRound(0);
     }
 
@@ -181,7 +191,7 @@ public class GridController {
 
 
     private void initRound(int roundNum) {
-        currGoals = app.currGame.rounds.get(roundNum).filter(app.level);
+        currGoals = app.currGame.rounds.get(roundNum).goalList;
         grid.clearGrid();
         if (grid.generate(currGoals) == null) {
             gridBuildFailDialog();

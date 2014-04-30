@@ -100,6 +100,11 @@ class Grid {
         Constants.Direction d;
         wordLen = goal.word.length();
 
+        if (wordLen > size) {
+            LOG.e(LOGTAG, "%s is too big for the grid", goal.word);
+            return false;
+        }
+
         for (byte i = 0; i < Constants.MAX_ATTEMPTS; i++) {
             d = Constants.Direction.fromInt(rndGen.nextInt(4));
             left = rndGen.nextInt(size);
