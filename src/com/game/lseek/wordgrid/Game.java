@@ -10,14 +10,22 @@ package com.game.lseek.wordgrid;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.Math;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.game.lseek.wordgrid.Constants.HeaderType;
 
 
 public class Game {
     private String LOGTAG = "wordgrid.Game";
 
-    public String gameTitle;
+    // use a map to store game info (title, etc.) so that they can be
+    // accessed via a simple key (rather than using a switch-case).
+    Map<HeaderType, String> gameInfo;
     public ArrayList<Round> rounds;
+    public byte calculatedSz;
 
 
     public Game(String gameFilePath) {
@@ -32,8 +40,10 @@ public class Game {
         GameFileParser parser = new GameFileParser();
         TaggedLine tokenizedLine = null;
         String line = null;
+        int lineNum = 1;
 
         rounds = new ArrayList<Round>();
+        gameInfo = new HashMap<HeaderType, String>();
 
         while (true) {
             if (tokenizedLine == null) {
@@ -56,11 +66,13 @@ public class Game {
                     break;
                 }
                 LOG.d(LOGTAG, "Read new line: " + line);
-                tokenizedLine = new TaggedLine(line);
+                lineNum++;
+                tokenizedLine = new TaggedLine(line.trim(), lineNum);
             }
             tokenizedLine = parser.process(tokenizedLine, this);
         }
         LOG.d(LOGTAG, "Finished constructing game object");
+        guessGridSize();
     }
 
 
@@ -77,6 +89,42 @@ public class Game {
             currRound = new Round(rTitle);
         }
         return currRound;
+    }
+
+
+    public void guessGridSize() {
+        /*
+         * Assume there are 'n' squares of identical size to be fitted into a
+         * grid. If each square can be thought of as one unit, then we would
+         * need a grid size of int(sqrt(n))+1 units to fit all the squares.
+         *
+         * Now assume that the average length of all the words in a round is L.
+         * Assume that there are N words. Furthermore, assume that each layout
+         * is equally likely. Therefore, it is most likely that half of the
+         * words use a 'square' layout (diagonal up/down) with an average "size"
+         * of LxL cells.
+         *
+         * To fit these N/2 squares we need a grid that of size int(sqrt(N/2)) +
+         * 1.
+         *
+         * Therefore the grid size required is L*(int(sqrt(N/2)) + 1) cells.
+         *
+         * To avoid rebuilding the grid each round, we actually average out the
+         * length of ALL the words in the game and also average the number of
+         * words in each round - we assume each round has approximately the same
+         * number of words.
+         */
+        int totalLen = 0;
+        int nWords = 0;
+
+        for (Round r : rounds) {
+            totalLen += r.wordLenSum;
+            nWords += r.goalList.size();
+        }
+        int avgWordLen = (int)(totalLen/nWords);;
+        int avgRoundSz = (int)(nWords/rounds.size());
+        calculatedSz = (byte)(avgWordLen * ((int)Math.sqrt(avgRoundSz/2) + 1));
+        LOG.d(LOGTAG, "calculatedSz:%d", calculatedSz);
     }
 
 

@@ -1,49 +1,48 @@
 package com.game.lseek.wordgrid;
 
-import android.util.Log;
 import java.util.regex.Matcher;
 
+import static com.game.lseek.wordgrid.Constants.*;
+import com.game.lseek.wordgrid.Constants.TagType;
+import com.game.lseek.wordgrid.Constants.HeaderType;
 
 class TaggedLine {
     private String LOGTAG = "wordgrid.Game.TaggedLine";
 
-    Constants.TagType lineType;
-    byte level;    // bitmap of ORed levels. Meaningful only for ROUND_ITEM types
+    TagType lineType;
+    HeaderType header; // only for 'headers'
+    int lineNum;
     String data;
 
     // NOTE: line should have been trim()med.
-    public TaggedLine(String line) {
-        Log.d(LOGTAG, "Parsing line:" + line);
+    public TaggedLine(String line, int lineNum) {
+        this.lineNum = lineNum;
+
+        LOG.d(LOGTAG, "Parsing line:" + line);
         if (line.length() == 0) {
-            Log.d(LOGTAG, "  Empty line");
-            lineType = Constants.TagType.BLANK_LINE;
+            LOG.d(LOGTAG, "  Empty line");
+            lineType = TagType.BLANK_LINE;
             data = null;
         } else {
-            Matcher m = Constants.SECTION_RE.matcher(line);
+            Matcher m = HEADER_RE.matcher(line);
             if (m.matches()) {
-                Log.d(LOGTAG, "  TITLE or ROUND title");
-                // TITLE or ROUND spec
-                lineType = Constants.tagMap.get(m.group(Constants.SECTION_GRP));
-                data = m.group(Constants.SECTION_DATA);
+                lineType = TagType.HEADER;
+                header = HeaderType.valueOf(m.group(TYPE_GRP));
+                data = m.group(DATA_GRP);
+                LOG.d(LOGTAG, "  type:%s, header:%s, data:%s",
+                      lineType, header, data);
             } else {
-                Log.d(LOGTAG, "  ROUND item");
-                // Round item
-                lineType = Constants.TagType.ROUND_ITEM;
-                m = Constants.ITEM_RE.matcher(line);
+                m = ROUND_RE.matcher(line);
                 if (m.matches()) {
-                    String levelStr = m.group(Constants.LEVEL_GRP);
-                    if (levelStr != null) {
-                        Log.d(LOGTAG, "  Level explicitly specified:" + levelStr);
-                        level |= Constants.levelMap.get(levelStr).intVal();
-                        data = m.group(Constants.ITEM_DATA);
-                        Log.d(LOGTAG, "  Data:" + data);
-                    } else {
-                        Log.d(LOGTAG, "  Implicit EASY level entry, Data:" + line);
-                        level = Constants.ItemLevel.EASY.intVal();
-                        data = line;
-                    }
+                    LOG.d(LOGTAG, "  ROUND Title");
+                    lineType = TagType.ROUND_TITLE;
+                    header = HeaderType.NA;
+                    data = m.group(DATA_GRP);
                 } else {
-                    Log.e(LOGTAG, "Syntax error:" + line);
+                    LOG.d(LOGTAG, "  ROUND item");
+                    // Round item
+                    lineType = TagType.ROUND_ITEM;
+                    data = line;
                 }
             }
         }

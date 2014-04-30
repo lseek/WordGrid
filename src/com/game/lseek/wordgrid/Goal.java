@@ -8,25 +8,29 @@ class Goal {
     private static final String LOGTAG = "wordgrid.Goal";
     public String word;
     public String clue;
-    public byte level;
     public int left, top, right, bottom;
     public Constants.Direction direction;
 
 
-    public Goal(TaggedLine line) {
-        level = line.level;
+    public class SyntaxException extends Exception {
+        public SyntaxException(String msg, int lineNum) {
+            super(String.format("Syntax eror: Line %d: %s", lineNum, msg));
+        }
+    }
 
+
+    public Goal(TaggedLine line) throws SyntaxException {
         String[] parts = line.data.split("\\s+", 2);
         Matcher m;
         word = parts[0];
         clue = (parts.length == 2) ? parts[1] : "";
+        word = word.toUpperCase();
         m = Constants.ALPHA_RE.matcher(word);
-        if (m.matches()) {
-            word = word.toUpperCase();
-            LOG.d(LOGTAG, "Parsed:(%s, %s)", word, clue);
-        } else {
-            // TODO: Raise exception
-            LOG.d(LOGTAG, "%s contains non alphabet characters", word);
+        if (!m.matches()) {
+            // TODO: Raise exception instead of removing non-alpha characters.
+            throw new SyntaxException(
+                    String.format("%s contains non alphabet characters", word),
+                    line.lineNum);
         }
         clearPlacement();
     }
