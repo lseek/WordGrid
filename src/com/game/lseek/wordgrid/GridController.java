@@ -31,18 +31,20 @@ public class GridController {
     private LayoutInflater inflater;
     private boolean menuReady = false;
     private byte nLeft;
+    private TextView roundTitleView;
     private boolean waitingForUserResponse = false;
 
 
     public GridController(Context context, LayoutInflater inflater,
                           WordGridApp app, GridView gridArea,
-                          LinearLayout clueArea) {
+                          TextView roundTitleView, LinearLayout clueArea) {
         LOG.d(LOGTAG, "Creating GridController");
         this.context = context;
         this.inflater = inflater;
         this.app = app;
         this.gridArea = gridArea;
         this.clueArea = clueArea;
+        this.roundTitleView = roundTitleView;
 
         gridSize = app.currGame.gameInfo.containsKey(HeaderType.SIZE) ?
                    (byte)Integer.parseInt(app.currGame.gameInfo.get(HeaderType.SIZE)) :
@@ -198,6 +200,7 @@ public class GridController {
         } else {
             grid.printSolution();
 
+            roundTitleView.setText(app.currGame.rounds.get(roundNum).roundTitle);
             adapter.setSrc(grid);
             adapter.notifyDataSetChanged();
             LOG.d(LOGTAG, "Created word grid");

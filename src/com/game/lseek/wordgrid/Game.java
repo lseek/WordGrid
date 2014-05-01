@@ -123,8 +123,17 @@ public class Game {
         }
         int avgWordLen = (int)(totalLen/nWords);;
         int avgRoundSz = (int)(nWords/rounds.size());
-        calculatedSz = (byte)(avgWordLen * ((int)Math.sqrt(avgRoundSz/2) + 1));
-        LOG.d(LOGTAG, "calculatedSz:%d", calculatedSz);
+        int tmp;
+        tmp = (int)(avgRoundSz/2) + 1;
+        LOG.d(LOGTAG, "avg/2 + 1:%d", tmp);
+        tmp = (int)Math.sqrt(tmp) + 1;
+        LOG.d(LOGTAG, "sqrt()+1:%d", tmp);
+        tmp = avgWordLen * tmp;
+        LOG.d(LOGTAG, "avgWordLen * sqrt()+1:%d", tmp);
+
+        calculatedSz = (byte)(avgWordLen * ((int)Math.sqrt((int)(avgRoundSz/2) + 1) + 1));
+        LOG.d(LOGTAG, "avgWordLen:%d, avgRoundSz:%d calculatedSz:%d",
+              avgWordLen, avgRoundSz, calculatedSz);
     }
 
 

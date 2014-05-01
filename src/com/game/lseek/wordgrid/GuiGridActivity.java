@@ -24,10 +24,10 @@ public class GuiGridActivity extends Activity
         LayoutInflater inflater = getLayoutInflater();
         WordGridApp app = (WordGridApp)getApplication();
 
-        GridView gridArea = (GridView)findViewById(R.id.gridArea);
-        LinearLayout clueArea = (LinearLayout)findViewById(R.id.clueArea);
-
-        controller = new GridController(this, inflater, app, gridArea, clueArea);
+        controller = new GridController(this, inflater, app,
+                                        (GridView)findViewById(R.id.gridArea),
+                                        (TextView)findViewById(R.id.roundTitle),
+                                        (LinearLayout)findViewById(R.id.clueArea));
     }
 
     public void cellClicked(View txtCell) {
