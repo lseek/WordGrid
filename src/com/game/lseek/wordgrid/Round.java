@@ -42,7 +42,7 @@ class Round {
 
     public Round setTitle(String rTitle) {
         if ((rTitle != null) && (rTitle.length() > 0)) {
-            roundTitle = rTitle;
+            roundTitle = String.format("Round %d: %s", roundNum + 1, rTitle);
         } else {
             // TODO: Make the format string a resource
             roundTitle = String.format("Round %d", roundNum);
