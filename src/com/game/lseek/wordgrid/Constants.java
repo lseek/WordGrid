@@ -12,7 +12,7 @@ import java.util.Set;
 
 
 class Constants {
-    public static final Pattern HEADER_RE = Pattern.compile("^@(TITLE|LEVEL|SIZE):\\s*(.*)$");
+    public static final Pattern HEADER_RE = Pattern.compile("^@(TITLE|LEVEL|SIZE|DESCR):\\s*(.*)$");
     public static final Pattern ROUND_RE = Pattern.compile("^@(ROUND):\\s*(.*)$");
 
     public static final int TYPE_GRP = 1; // RE group that gives the type
@@ -29,7 +29,7 @@ class Constants {
     }
 
     public static enum HeaderType {
-        NA, LEVEL, TITLE, SIZE
+        NA, LEVEL, TITLE, SIZE, DESCR
     }
 
 

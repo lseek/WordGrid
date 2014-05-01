@@ -8,6 +8,7 @@
 package com.game.lseek.wordgrid;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.lang.Math;
@@ -19,21 +20,22 @@ import com.game.lseek.wordgrid.Constants.HeaderType;
 
 
 public class Game {
-    private String LOGTAG = "wordgrid.Game";
+    private static final String LOGTAG = "wordgrid.Game";
 
     // use a map to store game info (title, etc.) so that they can be
     // accessed via a simple key (rather than using a switch-case).
     Map<HeaderType, String> gameInfo;
     public ArrayList<Round> rounds;
     public byte calculatedSz;
+    private int roundCount = 0;
 
 
-    public Game(String gameFilePath) {
+    public Game(File gameFile) {
         BufferedReader gameFd = null;
         try {
-            gameFd = new BufferedReader(new FileReader(gameFilePath));
+            gameFd = new BufferedReader(new FileReader(gameFile));
         } catch (IOException e) {
-            LOG.e(LOGTAG, String.format("Error opening:%s:%s", gameFilePath, e));
+            LOG.e(LOGTAG, "Error opening:%s:%s", gameFile.getPath(), e);
             // TODO: raise an exception
         }
 
@@ -50,15 +52,15 @@ public class Game {
                 try {
                     line = gameFd.readLine();
                 } catch (IOException e) {
-                    LOG.e(LOGTAG, String.format("Error reading from:%s:%s", gameFilePath, e));
+                    LOG.e(LOGTAG, "Error reading from:%s:%s", gameFile.getPath(), e);
                     break;
                 }
                 if (line == null) {
-                    LOG.d(LOGTAG, String.format("Finished parsing:%s", gameFilePath));
+                    LOG.d(LOGTAG, "Finished parsing:%s", gameFile.getPath());
 
                     Round tailData = parser.unprocessedRound();
                     if (!tailData.isEmpty()) {
-                        LOG.d(LOGTAG, String.format("Adding:%s", tailData.roundTitle));
+                        LOG.d(LOGTAG, "Adding:%s", tailData.roundTitle);
                         rounds.add(tailData);
                     } else {
                         LOG.d(LOGTAG, "tailData is empty");
@@ -81,13 +83,14 @@ public class Game {
             if (!currRound.isEmpty()) {
                 LOG.d(LOGTAG, "---- Adding round:" + currRound.roundTitle);
                 rounds.add(currRound);
-                currRound = new Round(rTitle);
+                currRound = new Round(rTitle, roundCount++);
             } else {
                 currRound.setTitle(rTitle);
             }
         } else {
-            currRound = new Round(rTitle);
+            currRound = new Round(rTitle, roundCount++);
         }
+
         return currRound;
     }
 

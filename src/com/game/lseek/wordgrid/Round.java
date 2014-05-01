@@ -7,7 +7,6 @@ import java.util.Map;
 
 class Round {
     private static final String LOGTAG = "wordgrid.Round";
-    private static int roundCount = 0;
 
     public ArrayList<Goal> goalList;
     public int roundNum;
@@ -15,8 +14,8 @@ class Round {
     public String roundTitle;
 
 
-    public Round(String rTitle) {
-        roundNum = roundCount++;
+    public Round(String rTitle, int roundNum) {
+        this.roundNum = roundNum;
         goalList = new ArrayList<Goal>();
         setTitle(rTitle);
     }

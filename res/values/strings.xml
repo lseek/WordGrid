@@ -4,4 +4,6 @@
     <string name="yesChoice">Yes</string>
     <string name="noChoice">No</string>
     <string name="error">Error</string>
+    <string name="normalLevelStr">Normal</string>
+    <string name="noneStr">None</string>
 </resources>
