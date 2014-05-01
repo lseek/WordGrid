@@ -17,7 +17,7 @@ public class AppStart extends Activity
 
     public void startGame(View btn) {
         WordGridApp app = (WordGridApp)getApplication();
-        app.initGame();
+        app.loadGame(null);
 
         Intent showGridIntent = new Intent(this, GuiGridActivity.class);
         startActivity(showGridIntent);

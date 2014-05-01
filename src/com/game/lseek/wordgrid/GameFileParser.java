@@ -57,8 +57,12 @@ public class GameFileParser {
      * An interface to allow the state machine to execute actions
      */
     private interface Action {
-        // 'run' should return null if it consumes the input line
+        // 'run' should return null if it consumes the input line. For parsing
+        // entire game file.
         public TaggedLine run(TaggedLine line, Game g);
+
+        // for parsing game headers only.
+        public TaggedLine runHeader(TaggedLine line, GameInfo g);
     }
 
 
@@ -68,22 +72,37 @@ public class GameFileParser {
         public TaggedLine run(TaggedLine line, Game g) {
             return null;
         }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {
+            return null;
+        }
     };
 
     // Save a "header"
     private Action saveHeader = new Action() {
-        @Override
-        public TaggedLine run(TaggedLine line, Game g) {
+        private void saveHeader(TaggedLine line, Map<HeaderType, String> gameInfo) {
             assert ((line.header == HeaderType.TITLE) ||
                     (line.header == HeaderType.LEVEL) ||
                     (line.header == HeaderType.SIZE));
-            if (g.gameInfo.containsKey(line.lineType)) {
+            if (gameInfo.containsKey(line.lineType)) {
                 LOG.d(LOGTAG, "Ignoring repeat header:%s in line:%d",
                       line.header, line.lineNum);
             } else {
-                g.gameInfo.put(line.header, line.data.toUpperCase());
+                gameInfo.put(line.header, line.data);
                 LOG.d(LOGTAG, "Got game header:%s", line.data);
             }
+        }
+
+        @Override
+        public TaggedLine run(TaggedLine line, Game g) {
+            saveHeader(line, g.gameInfo);
+            return null;
+        }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {
+            saveHeader(line, g.gameInfo);
             return null;
         }
     };
@@ -99,6 +118,9 @@ public class GameFileParser {
             currRound.addGoal(line);
             return null;
         }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {return null;}
     };
 
     // Extract round title and create new round with it
@@ -109,12 +131,20 @@ public class GameFileParser {
             LOG.d(LOGTAG, "Got Round Title:%s", line.data);
             return null;
         }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {return null;}
     };
 
     // Don't consume a line
     private Action nop = new Action() {
         @Override
         public TaggedLine run(TaggedLine line, Game g) {
+            return line;
+        }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {
             return line;
         }
     };
@@ -128,6 +158,9 @@ public class GameFileParser {
                   line.header, line.lineNum);
             return null;
         }
+
+        @Override
+        public TaggedLine runHeader(TaggedLine line, GameInfo g) {return null;}
     };
 
 
@@ -203,6 +236,18 @@ public class GameFileParser {
               currState, s.nextState);
         currState = s.nextState;
         return s.action.run(line, g);
+    }
+
+
+    public TaggedLine processHeaders(TaggedLine line, GameInfo g) {
+        LOG.d(LOGTAG,
+              "process: currState:%s, lineType:%s, data:%s",
+              currState, line.lineType, line.data);
+        StateInfo s = stateMachine.get(currState).get(line.lineType);
+        LOG.d(LOGTAG, "State transition from:%s to:%s",
+              currState, s.nextState);
+        currState = s.nextState;
+        return s.action.runHeader(line, g);
     }
 
 
