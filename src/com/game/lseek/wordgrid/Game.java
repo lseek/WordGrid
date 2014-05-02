@@ -13,24 +13,27 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.Math;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
-import com.game.lseek.wordgrid.Constants.HeaderType;
+import static com.game.lseek.wordgrid.Constants.*;
 
 
 public class Game {
     private static final String LOGTAG = "wordgrid.Game";
 
-    // use a map to store game info (title, etc.) so that they can be
-    // accessed via a simple key (rather than using a switch-case).
-    Map<HeaderType, String> gameInfo;
-    public ArrayList<Round> rounds;
-    public byte calculatedSz;
     private int roundCount = 0;
 
+    // use a map to store game info (title, etc.) so that they can be
+    // accessed via a simple key (rather than using a switch-case).
+    public byte calculatedSz;
+    public Map<HeaderType, String> gameInfo;
+    public ArrayList<Round> rounds;
 
-    public Game(File gameFile) {
+
+    public Game(File gameFile, Level gameLevel) {
         BufferedReader gameFd = null;
         try {
             gameFd = new BufferedReader(new FileReader(gameFile));
@@ -74,7 +77,7 @@ public class Game {
             tokenizedLine = parser.process(tokenizedLine, this);
         }
         LOG.d(LOGTAG, "Finished constructing game object");
-        guessGridSize();
+        guessGridSize(gameLevel);
     }
 
 
@@ -95,46 +98,52 @@ public class Game {
     }
 
 
-    public void guessGridSize() {
+    public void guessGridSize(Level gameLevel) {
         /*
-         * Assume there are 'n' squares of identical size to be fitted into a
-         * grid. If each square can be thought of as one unit, then we would
-         * need a grid size of int(sqrt(n))+1 units to fit all the squares.
+         * Assume there are 'n' SQUARES of identical size to be fitted into a
+         * grid. If each SQUARE can be thought of as one unit, then we would
+         * need a grid size of int(sqrt(n))+1 units to fit all the SQUARES.
          *
          * Now assume that the average length of all the words in a round is L.
-         * Assume that there are N words. Furthermore, assume that each layout
-         * is equally likely. Therefore, it is most likely that half of the
-         * words use a 'square' layout (diagonal up/down) with an average "size"
-         * of LxL cells.
+         * Assume that there are N words. Furthermore, assume that the
+         * probability of a 'square' layout is P (0 <= P <= 1). Therefore it is
+         * most likely that P*N of the words will use a 'SQUARE' layout
+         * (diagonal up/down) with an average "size" of LxL CELLS.
          *
-         * To fit these N/2 squares we need a grid that of size int(sqrt(N/2)) +
-         * 1.
+         * To fit these P*N SQUARES we need a grid that of size int(sqrt(P*N)) +
+         * 1 SQUARES.
          *
-         * Therefore the grid size required is L*(int(sqrt(N/2)) + 1) cells.
+         * Therefore the grid size required is L*(int(sqrt(P*N)) + 1) CELLS.
          *
          * To avoid rebuilding the grid each round, we actually average out the
          * length of ALL the words in the game and also average the number of
          * words in each round - we assume each round has approximately the same
          * number of words.
          */
-        int totalLen = 0;
-        int nWords = 0;
+        int totalLen, nWords, maxLen;
+        totalLen = nWords = maxLen = 0;
 
         for (Round r : rounds) {
             totalLen += r.wordLenSum;
             nWords += r.goalList.size();
+            maxLen = Math.max(maxLen, r.maxLen);
         }
         int avgWordLen = (int)(totalLen/nWords);;
         int avgRoundSz = (int)(nWords/rounds.size());
-        int tmp;
-        tmp = (int)(avgRoundSz/2) + 1;
-        LOG.d(LOGTAG, "avg/2 + 1:%d", tmp);
-        tmp = (int)Math.sqrt(tmp) + 1;
-        LOG.d(LOGTAG, "sqrt()+1:%d", tmp);
-        tmp = avgWordLen * tmp;
-        LOG.d(LOGTAG, "avgWordLen * sqrt()+1:%d", tmp);
+        int totalWeight, squareWeight;
+        float squarePercent;
+        Map<Direction, Integer> weightMap = levelWeights.get(gameLevel);
+        totalWeight = weightMap.get(Direction.HORIZONTAL)
+                      + weightMap.get(Direction.VERTICAL)
+                      + weightMap.get(Direction.DIAG_UP)
+                      + weightMap.get(Direction.DIAG_DOWN);
+        squarePercent = (weightMap.get(Direction.DIAG_UP)
+                         + weightMap.get(Direction.DIAG_DOWN)) / totalWeight;
+        int nSquares = (int)(avgRoundSz * squarePercent);
 
-        calculatedSz = (byte)(avgWordLen * ((int)Math.sqrt((int)(avgRoundSz/2) + 1) + 1));
+        calculatedSz = (byte)(avgWordLen * ((int)Math.sqrt(nSquares) + 1));
+
+        calculatedSz = (byte)Math.max(calculatedSz, minGridSzMap.get(gameLevel));
         LOG.d(LOGTAG, "avgWordLen:%d, avgRoundSz:%d calculatedSz:%d",
               avgWordLen, avgRoundSz, calculatedSz);
     }

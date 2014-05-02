@@ -1,5 +1,6 @@
 package com.game.lseek.wordgrid;
 
+import java.lang.Math;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,7 @@ class Round {
     private static final String LOGTAG = "wordgrid.Round";
 
     public ArrayList<Goal> goalList;
+    public int maxLen = 0;
     public int roundNum;
     public int wordLenSum = 0;
     public String roundTitle;
@@ -23,10 +25,13 @@ class Round {
 
     public void addGoal(TaggedLine line) {
         Goal g;
+        int l;
         try {
             g = new Goal(line);
             goalList.add(g);
-            wordLenSum += g.word.length();
+            l = g.word.length();
+            wordLenSum += l;
+            maxLen = Math.max(maxLen, l);
         } catch (Goal.SyntaxException e) {
             // skip this line
             LOG.e(LOGTAG, e.getMessage());
