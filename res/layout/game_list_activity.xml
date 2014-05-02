@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
+    <!--
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
@@ -7,7 +8,7 @@
     <TextView
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:textSize="20dp"
+        android:textSize="30sp"
         android:text="@string/app_name"
         android:gravity="center"
         android:id="@+id/nameLabel"
@@ -34,3 +35,10 @@
         android:layout_alignLeft="@id/aboutButton"
         />
 </RelativeLayout>
+        -->
+<ListView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/gameList"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="left"
+    />

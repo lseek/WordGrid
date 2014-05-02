@@ -1,22 +1,102 @@
 package com.game.lseek.wordgrid;
 
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.Random;
+
+import static com.game.lseek.wordgrid.Constants.*;
 
 
 class Grid {
     private static final String LOGTAG = "wordgrid.Grid";
 
+    private Level gameLevel;
+    private Random rndGen;
+
     public  Cell[][] entries;
     public boolean revealed = false;
-    private Random rndGen;
     public byte size;
 
+    class WeightInfo {
+        public Direction d;
+        public int from, to;
 
-    public Grid(byte sz) {
+        public WeightInfo(Direction d, int from, int to) {
+            this.d = d;
+            this.from = from;
+            this.to = to;
+        }
+
+
+        public boolean contains(int i) {
+            return (from <= i) && (i <= to);
+        }
+    }
+
+
+    class DirectionGenerator {
+        private static final int AMPLIFY_FACTOR = 1000;
+
+        private Random rndGen;
+        private WeightInfo[] intervals;
+        private int totalWeight;
+
+        /*
+         * The basic logic is as follows:
+         *
+         * Add up the weights and multiply everything by a factor of 1000
+         * (arbitrarily chosen) to make up a "weight space". Within this space each
+         * direction occupies some number of points (its interval) as determined by
+         * its weight - the higher the weight, the larger the interval it occupies.
+         * Therefore, a random number within the "weight space" is more likely to
+         * pick one of these points than a direction with less weight.
+         *
+         * An example: Assume HORIZ:4 VERT:3 DIAG_DOWN:2 DIAG:UP:1
+         *
+         * "ampflified" weights: HORIZ:4000 VERT:3000 DIAG_DOWN:2000 DIAG:UP:1000
+         *
+         * Total weight space: 10000
+         *
+         * Therefore we assume:
+         *  [0, 3999]   -> HORIZ
+         *  [4000, 6999]-> VERT
+         *  [7000, 8999]-> DIAG_DOWN
+         *  [9000, 9999]-> DIAG_UP
+         */
+        public DirectionGenerator(Map<Direction, Integer> weightMap) {
+            intervals = new WeightInfo[4];
+            int i, from, weight;
+            i = from = totalWeight = 0;
+            for (Direction d : weightMap.keySet()) {
+                weight = weightMap.get(d) * AMPLIFY_FACTOR;
+                from = totalWeight;
+                totalWeight += weight;
+                intervals[i] = new WeightInfo(d, from, totalWeight-1);
+                i++;
+            }
+            rndGen = new Random();
+        }
+
+
+        public Direction randomDirection() {
+            int point = rndGen.nextInt(totalWeight);
+            for (WeightInfo w : intervals) {
+                if (w.contains(point)) {
+                    return w.d;
+                }
+            }
+            // should never come here but java wants it
+            return Direction.UNDEFINED;
+        }
+    }
+
+
+
+    public Grid(byte sz, Level l) {
         entries = new Cell[sz][sz];
         rndGen = new Random();
         size = sz;
+        gameLevel = l;
 
         for (byte row = 0; row < sz ; row++) {
             for (byte col = 0; col < sz; col++) {
@@ -105,8 +185,9 @@ class Grid {
             return false;
         }
 
+        DirectionGenerator dgen = new DirectionGenerator(levelWeights.get(gameLevel));
         for (byte i = 0; i < Constants.MAX_ATTEMPTS; i++) {
-            d = Constants.Direction.fromInt(rndGen.nextInt(4));
+            d = dgen.randomDirection();
             left = rndGen.nextInt(size);
             top = rndGen.nextInt(size);
             // right is always > left except for VERTICAL direction.

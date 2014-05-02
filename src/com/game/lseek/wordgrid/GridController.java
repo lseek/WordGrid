@@ -13,7 +13,6 @@ import java.lang.Math;
 import java.util.ArrayList;
 
 import static com.game.lseek.wordgrid.Constants.*;
-import com.game.lseek.wordgrid.Constants.HeaderType;
 
 public class GridController {
     private static final String LOGTAG = "wordgrid.GuiGrid";
@@ -52,7 +51,7 @@ public class GridController {
         gridSize = (byte)Math.min(gridSize, MAX_GRID_SIZE);
         gridSize = (byte)Math.max(gridSize, MIN_GRID_SIZE);
         LOG.d(LOGTAG, "Using grid size:%d", gridSize);
-        grid = new Grid(gridSize);
+        grid = new Grid(gridSize, app.gameLevel);
         currRound = 0;
         currChain = new CellLine();
         adapter = new GridAdapter(inflater, context);

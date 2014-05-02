@@ -6,6 +6,7 @@ import android.os.Environment;
 import java.io.File;
 import java.util.ArrayList;
 
+import static com.game.lseek.wordgrid.Constants.*;
 
 public class WordGridApp extends Application
 {
@@ -19,6 +20,7 @@ public class WordGridApp extends Application
     }
 
     public Game currGame;
+    public Level gameLevel = Level.NORMAL;
 
     public void onCreate() {
         super.onCreate();
@@ -36,6 +38,6 @@ public class WordGridApp extends Application
     }
 
     public void loadGame(File gameFd) {
-        currGame = new Game(gameFd);
+        currGame = new Game(gameFd, gameLevel);
     }
 }
